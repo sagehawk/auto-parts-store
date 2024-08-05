@@ -9,7 +9,15 @@ require_once('../includes/functions.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Process the form data and place the order
-    $result = placeOrder($_POST['customer_id'], $_POST['items'], $_POST['shipping_address'], $_POST['card_number'], $_POST['card_expiry'], $_POST['card_cvv'], $_POST['card_name']);
+    $items = json_decode($_POST['items'], true);
+    $creditCardInfo = array(
+        'number' => $_POST['card_number'],
+        'expiration' => $_POST['card_expiry'],
+        'name' => $_POST['card_name'],
+        'cvv' => $_POST['card_cvv'] // Include CVV if needed
+    );
+    
+    $result = placeOrder($_POST['customer_id'], $items, $_POST['shipping_address'], $creditCardInfo);
 
     // Return the result as JSON
     header('Content-Type: application/json');
