@@ -1,66 +1,76 @@
 <?php
 session_start();
+require_once('../includes/functions.php');
 
-// Retrieve cart items from the session
-if (isset($_SESSION['cart'])) {
-    $cartItems = $_SESSION['cart'];
-} else {
-    $cartItems = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart'])) {
+    $_SESSION['cart'] = json_decode($_POST['cart'], true);
+    echo 'Cart data saved to session';
+    exit;
 }
 
+$cartItems = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+$total = 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout</title>   
-
-    <link rel="stylesheet" href="css/styles.css">   
-
+    <title>Checkout</title>   
+    <link rel="stylesheet" href="css/styles.css">   
 </head>
 <body>
     <h1>Checkout</h1>
 
     <form id="checkout-form" action="order.php" method="POST" onsubmit="return validateForm()">
-
         <h2>Order Summary</h2>
         <div id="order-summary">
             <?php 
-            $total = 0;
             foreach ($cartItems as $item): 
                 $product = getProductById($item['id']);
-                $itemTotal = $product['price'] * $item['quantity'];
+                $itemTotal = $product['price'] * 1; // Assuming quantity is 1, update as needed
                 $total += $itemTotal;
                 ?>
                 <div class="order-item">
-                    <p><?= $product['description'] ?> x <?= $item['quantity'] ?></p>
+                    <p><?= htmlspecialchars($product['description']) ?> x 1</p>
                     <p>$<?= number_format($itemTotal, 2) ?></p>
                 </div>
             <?php endforeach; ?>
             <p>Total: $<span id="order-total"><?= number_format($total, 2) ?></span></p>
         </div>
+
         <h2>Customer Information</h2>
         <input type="hidden" name="cart_items" id="cart_items_input" value='<?= htmlspecialchars(json_encode($cartItems)) ?>'>
+        
         <label for="customer_name">Customer Name:</label>
         <input type="text" id="customer_name" name="customer_name" required><br><br>
-        
-        <label for="email">Email:</label>   
 
+        <label for="email">Email:</label>   
         <input type="email" id="email" name="email" required><br><br>
 
         <label for="shipping_address">Shipping Address:</label>
-        <textarea id="shipping_address" name="shipping_address" required></textarea><br><br>   
+        <textarea id="shipping_address" name="shipping_address" required></textarea><br><br>   
 
+        <button type="submit">Place Order</button>
+    </form>
 
-        </form>
-    
     <script>
-        function validateForm() {
-            // Implement your form validation logic here.
-            // Return true if the form is valid, false otherwise.
+        document.addEventListener('DOMContentLoaded', function () {
+            const storedCart = sessionStorage.getItem('cart');
+            if (storedCart) {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'checkout.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        console.log(xhr.responseText);
+                    }
+                };
+                xhr.send('cart=' + encodeURIComponent(storedCart));
+            }
+        });
 
-            // Example validation (you'll need to add more specific checks):
+        function validateForm() {
             const customerName = document.getElementById('customer_name').value;
             const email = document.getElementById('email').value;
             const shippingAddress = document.getElementById('shipping_address').value;

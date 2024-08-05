@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const addToCartButtons = document.querySelectorAll('.add-to-cart');
     const cartItems = document.getElementById('cart-items');
     const cartTotal = document.getElementById('cart-total');
-    const checkoutButton = document.getElementById('checkout-button');   
+    const checkoutButton = document.getElementById('checkout-button');
 
-    let cart = []; 
+    let cart = [];
 
     // Load cart from local storage or session
     const storedCart = localStorage.getItem('cart') || sessionStorage.getItem('cart');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     addToCartButtons.forEach(button => {
         button.addEventListener('click', () => {
             const productId = button.dataset.productId;
-            addToCart(productId);   
+            addToCart(productId);
         });
     });
 
@@ -28,10 +28,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function addToCart(productId) {
         fetch(`get_product.php?id=${productId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(product => {
+                console.log('Product added:', product); // Log product for debugging
                 cart.push(product);
                 updateCartDisplay();
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
             });
     }
 
@@ -52,32 +61,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         cartTotal.textContent = total.toFixed(2);
-    }
-
-    // Form validation
-    function validateCheckoutForm() {
-        const form = document.getElementById('checkout-form');
-        const name = form.elements['name'].value;
-        const email = form.elements['email'].value;
-        const address = form.elements['address'].value;
-        const cardNumber = form.elements['card-number'].value;
-        const cardExpiry = form.elements['card-expiry'].value;
-        const cardCVV = form.elements['card-cvv'].value;
-
-        if (!name || !email || !address || !cardNumber || !cardExpiry || !cardCVV) {
-            alert('Please fill in all fields');
-            return false;
-        }
-
-        // Add more specific validation (e.g., email format, card number format) here
-
-        return true;
-    }
-
-    // Load cart from session storage on checkout page
-    if (window.location.pathname.includes('checkout.php')) {
-        const storedCart = JSON.parse(sessionStorage.getItem('cart') || '[]');
-        cart = storedCart;
-        updateCartDisplay();
     }
 });
