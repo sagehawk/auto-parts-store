@@ -29,10 +29,24 @@ function getRandomCustomer() {
     return $result->fetch_assoc();
 }
 
-function calculateShipping($weight) {
-    if ($weight < 5) return 5.00;
-    elseif ($weight < 10) return 10.00;
-    else return 15.00;
+function calculateShippingCost($weight) {
+    $shippingRates = $_SESSION['shipping_rates'] ?? [];
+    
+    if (empty($shippingRates)) {
+        // Default shipping charges if no rates are set
+        if ($weight < 0) return 0.00;
+        elseif ($weight < 10) return 10.00;
+        else return 15.00;
+    }
+
+    foreach ($shippingRates as $rate) {
+        if ($weight >= $rate['min'] && $weight < $rate['max']) {
+            return $rate['charge'];
+        }
+    }
+
+    // If weight exceeds all brackets, use the highest charge
+    return end($shippingRates)['charge'];
 }
 
 function processPayment($cardInfo, $amount) {
@@ -69,14 +83,6 @@ function processPayment($cardInfo, $amount) {
 
 function sendOrderConfirmationEmail($email, $orderId) {
     // Implement email sending logic
-}
-
-function createCustomer($name, $email, $address) {
-    global $conn;
-    $stmt = $conn->prepare("INSERT INTO customers (name, contact, street) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $name, $email, $address);
-    $stmt->execute();
-    return $conn->insert_id;
 }
 
 function getProductById($id) {
@@ -122,6 +128,40 @@ function updateInventoryOnPurchase($partNumber, $quantity) {
     }
     $_SESSION['inventory'][$partNumber] -= $quantity;
     return true;
+}
+
+function getCustomerByDetails($name, $city, $street) {
+    global $conn;
+    $stmt = $conn->prepare("SELECT id, name, city, street, contact FROM customers WHERE name = ? AND city = ? AND street = ?");
+    $stmt->bind_param("sss", $name, $city, $street);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc();
+}
+
+function createOrder($customerDetails, $totalCost, $shippingCost, $items) {
+    $orderId = uniqid();
+    $_SESSION['orders'][$orderId] = [
+        'customer_id' => $customerDetails['id'],
+        'customer_name' => $customerDetails['name'],
+        'customer_city' => $customerDetails['city'],
+        'customer_street' => $customerDetails['street'],
+        'customer_contact' => $customerDetails['contact'],
+        'total_cost' => $totalCost,
+        'shipping_cost' => $shippingCost,
+        'items' => $items,
+        'status' => 'pending',
+        'date' => date('Y-m-d H:i:s')
+    ];
+    return $orderId;
+}
+
+function createCustomer($name, $city, $street) {
+    global $conn;
+    $stmt = $conn->prepare("INSERT INTO customers (name, city, street) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $name, $city, $street);
+    $stmt->execute();
+    return $conn->insert_id;
 }
 
 

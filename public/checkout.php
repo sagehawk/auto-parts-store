@@ -23,7 +23,7 @@ foreach ($cartItems as $item) {
 }
 
 // Calculate shipping cost
-$shippingCost = calculateShipping($totalWeight);
+$shippingCost = calculateShippingCost($totalWeight);
 
 // Calculate total
 $total = $subtotal + $shippingCost;
@@ -63,17 +63,15 @@ $total = $subtotal + $shippingCost;
 
         <h2>Customer Information</h2>
         <input type="hidden" name="cart_items" id="cart_items_input" value='<?= htmlspecialchars(json_encode($cartItems)) ?>'>
-        <input type="hidden" name="shipping_cost" value="<?= $shippingCost ?>">
-        <input type="hidden" name="total_cost" value="<?= $total ?>">
 
         <label for="customer_name">Customer Name:</label>
         <input type="text" id="customer_name" name="customer_name" required><br><br>
 
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" required><br><br>
 
-        <label for="shipping_address">Shipping Address:</label>
-        <textarea id="shipping_address" name="shipping_address" required></textarea><br><br>
+        <label for="street">Street Address:</label>
+        <input type="text" id="street" name="street" required><br><br>
 
         <label for="card-number">Card Number:</label>
         <input type="text" id="card-number" name="card-number" required><br><br>
@@ -119,5 +117,6 @@ $total = $subtotal + $shippingCost;
             return true; 
         }
     </script>
+        <script src="main.js"></script>
 </body>
 </html>

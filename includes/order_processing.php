@@ -56,9 +56,4 @@ function placeOrder($customerId, $items, $shippingAddress, $creditCardInfo) {
     }
 }
 
-function calculateShippingCost($weight) {
-    if ($weight < 5) return 5.00;
-    elseif ($weight < 10) return 10.00;
-    else return 15.00;
-}
 ?>

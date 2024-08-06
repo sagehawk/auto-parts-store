@@ -107,6 +107,57 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('order.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showModal('Order Placed Successfully', `Your order has been placed. Order ID: ${data.orderId}`);
+                // Clear the cart
+                sessionStorage.removeItem('cart');
+            } else {
+                showModal('Error', `Failed to place order: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            showModal('Error', 'An unexpected error occurred. Please try again.');
+            console.error('Error:', error);
+        });
+    });
+    
+    function showModal(title, message) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>${title}</h2>
+                <p>${message}</p>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    
+        const closeBtn = modal.querySelector('.close');
+        closeBtn.onclick = function() {
+            document.body.removeChild(modal);
+        }
+    
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                document.body.removeChild(modal);
+            }
+        }
+    
+        modal.style.display = 'block';
+    }
+    
     // This part should be in a separate file that handles the order submission
     /*
     fetch('order.php', {
@@ -129,3 +180,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     */
 });
+
