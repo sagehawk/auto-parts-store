@@ -14,6 +14,7 @@ if (isset($_GET['id'])) {
             'customerEmail' => $order['customer_email'],
             'shippingAddress' => $order['shipping_address'],
             'total' => $order['total_cost'],
+            'shippingCost' => $order['shipping_cost'],
             'items' => $order['items'],
             'date' => $order['date']
         ];

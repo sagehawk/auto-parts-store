@@ -7,6 +7,15 @@ require_once('../includes/order_processing.php');
 require_once('../includes/warehouse_functions.php');
 require_once('../includes/functions.php');
 
+// Initialize inventory if not set
+if (!isset($_SESSION['inventory'])) {
+    $_SESSION['inventory'] = [];
+    $products = getProducts();
+    foreach ($products as $product) {
+        $_SESSION['inventory'][$product['number']] = 10; // Set initial inventory to 10 for each product
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Process the form data and place the order
     $items = json_decode($_POST['items'], true);
@@ -24,6 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode($result);
     exit;  // Make sure to exit after sending JSON response
 }
+
+$products = getProducts();
 ?>
 
 <!DOCTYPE html>
@@ -47,24 +58,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <main>
-        <section id="catalog">
-            <h2>Product Catalog</h2>
+    <section id="catalog">
+    <h2>Product Catalog</h2>
+    <?php foreach ($products as $product): ?>
+        <div class="product">
+            <h3><?= htmlspecialchars($product['description']) ?></h3>
+            <img src="<?= htmlspecialchars($product['pictureURL']) ?>" alt="<?= htmlspecialchars($product['description']) ?>">
+            <p>Price: $<?= number_format($product['price'], 2) ?></p>
+            <p>Weight: <?= $product['weight'] ?> lbs</p>
             <?php
-            // Fetch products from the database
-            $products = getProducts();
-
-            foreach ($products as $product) {
-                echo "<div class='product'>";
-                echo "<h3>{$product['description']}</h3>";
-                echo "<img src='{$product['pictureURL']}' alt='{$product['description']}'>";
-                echo "<p>Price: $" . number_format($product['price'], 2) . "</p>";
-                echo "<input type='number' class='product-quantity' min='1' value='1' data-product-id='" . $product['number'] . "'>";
-                echo "<p>Weight: {$product['weight']} lbs</p>";
-                echo "<button class='add-to-cart' data-product-id='{$product['number']}'>Add to Cart</button>";
-                echo "</div>";
-            }
+            $productNumber = $product['number'];
+            $inventoryCount = isset($_SESSION['inventory'][$productNumber]) ? $_SESSION['inventory'][$productNumber] : 0;
             ?>
-        </section>
+            <p>In Stock: <span class="inventory-count"><?= $inventoryCount ?></span></p>
+            <input type="number" class="product-quantity" min="1" max="<?= $inventoryCount ?>" value="1" data-product-id="<?= $productNumber ?>">
+            <button class="add-to-cart" data-product-id="<?= $productNumber ?>" <?= $inventoryCount == 0 ? 'disabled' : '' ?>>
+                <?= $inventoryCount == 0 ? 'Out of Stock' : 'Add to Cart' ?>
+            </button>
+        </div>
+    <?php endforeach; ?>
+</section>
+
 
         <section id="cart">
             <h2>Shopping Cart</h2>

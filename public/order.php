@@ -38,14 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $customer = getRandomCustomer();
         }
         
+        $shippingCost = calculateShipping($totalWeight);
+        $totalPrice += $shippingCost;
+
         // Store order in session
         $orderId = uniqid();
         $_SESSION['orders'][$orderId] = [
             'customer_id' => $customer['id'],
             'customer_name' => $customer['name'],
             'customer_email' => $customer['contact'],
-            'shipping_address' => $orderData['shipping_address'], // Store the provided shipping address
+            'shipping_address' => $orderData['shipping_address'],
             'total_cost' => $totalPrice,
+            'shipping_cost' => $shippingCost,
             'items' => $cartItems,
             'status' => 'pending',
             'date' => date('Y-m-d H:i:s')

@@ -11,9 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     document.getElementById('orderDetails').innerHTML = `
                         <p>Order ID: ${data.orderId}</p>
-                        <p>Customer Name: ${data.customerName}</p>
-                        <p>Customer Email: ${data.customerEmail}</p>
-                        <p>Shipping Address: ${data.shippingAddress}</p>
+                        <p>Customer ID: ${data.customerId}</p>
                         <p>Total: $${data.total}</p>
                         <h3>Items:</h3>
                         <ul>

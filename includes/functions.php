@@ -5,7 +5,14 @@ function getProducts() {
     global $conn;
     $sql = "SELECT * FROM parts";
     $result = $conn->query($sql);
-    return $result->fetch_all(MYSQLI_ASSOC);
+    $products = $result->fetch_all(MYSQLI_ASSOC);
+    
+    // Add inventory quantity to each product
+    foreach ($products as &$product) {
+        $product['inventory'] = getInventoryQuantity($product['number']);
+    }
+    
+    return $products;
 }
 
 function getCustomerByEmail($email) {
@@ -59,17 +66,6 @@ function processPayment($cardInfo, $amount) {
 }
 
 
-function getInventoryQuantity($partNumber) {
-    global $conn;
-    $stmt = $conn->prepare("SELECT quantity FROM inventory WHERE part_number = ?");
-    $stmt->bind_param("i", $partNumber);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($row = $result->fetch_assoc()) {
-        return $row['quantity'];
-    }
-    return 0;
-}
 
 function sendOrderConfirmationEmail($email, $orderId) {
     // Implement email sending logic
@@ -95,8 +91,38 @@ function getProductById($id) {
     return null;
 }
 
+function getInventory() {
+    global $conn;
+    $result = $conn->query("SELECT number, description, weight FROM parts");
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
 
+function updateInventory($partNumber, $quantity) {
+    // Since we can't modify the database, we'll store inventory in session
+    if (!isset($_SESSION['inventory'])) {
+        $_SESSION['inventory'] = [];
+    }
+    if (!isset($_SESSION['inventory'][$partNumber])) {
+        $_SESSION['inventory'][$partNumber] = 0;
+    }
+    $_SESSION['inventory'][$partNumber] += $quantity;
+    return true;
+}
 
+function getInventoryQuantity($partNumber) {
+    return $_SESSION['inventory'][$partNumber] ?? 0;
+}
+
+function updateInventoryOnPurchase($partNumber, $quantity) {
+    if (!isset($_SESSION['inventory'][$partNumber])) {
+        return false; // Item not in inventory
+    }
+    if ($_SESSION['inventory'][$partNumber] < $quantity) {
+        return false; // Not enough stock
+    }
+    $_SESSION['inventory'][$partNumber] -= $quantity;
+    return true;
+}
 
 
 ?>

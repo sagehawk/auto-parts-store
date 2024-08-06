@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let cart = [];
 
-    // Load cart from local storage or session
-    const storedCart = localStorage.getItem('cart') || sessionStorage.getItem('cart');
+    // Load cart from session storage
+    const storedCart = sessionStorage.getItem('cart');
     if (storedCart) {
         cart = JSON.parse(storedCart);
         updateCartDisplay();
@@ -16,30 +16,18 @@ document.addEventListener('DOMContentLoaded', function () {
     addToCartButtons.forEach(button => {
         button.addEventListener('click', () => {
             const productId = button.dataset.productId;
-            addToCart(productId);
+            const quantityInput = button.parentElement.querySelector('.product-quantity');
+            const quantity = parseInt(quantityInput.value);
+            addToCart(productId, quantity);
         });
     });
 
     checkoutButton.addEventListener('click', () => {
-        // Store cart in session storage before redirecting
         sessionStorage.setItem('cart', JSON.stringify(cart));
-
-        // Use fetch to send cart data to checkout.php before redirecting
-        fetch('checkout.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `cart=${encodeURIComponent(JSON.stringify(cart))}`
-        }).then(response => response.text())
-          .then(() => {
-              window.location.href = 'checkout.php';
-          }).catch(error => {
-              console.error('Fetch error:', error);
-          });
+        window.location.href = 'checkout.php';
     });
 
-    function addToCart(productId) {
+    function addToCart(productId, quantity) {
         fetch(`get_product.php?id=${productId}`)
             .then(response => {
                 if (!response.ok) {
@@ -48,15 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.json();
             })
             .then(product => {
-                console.log('Product added:', product); // Log product for debugging
                 const existingItem = cart.find(item => item.id === product.id);
                 if (existingItem) {
-                    existingItem.quantity += 1; // Increment quantity if item already in cart
+                    existingItem.quantity += quantity;
                 } else {
-                    product.quantity = 1; // Add quantity field
+                    product.quantity = quantity;
                     cart.push(product);
                 }
                 updateCartDisplay();
+                updateInventoryDisplay(product.id, -quantity);
             })
             .catch(error => {
                 console.error('Fetch error:', error);
@@ -74,14 +62,53 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p>${item.description}</p>
                 <p>Price: $${item.price}</p>
                 <p>Quantity: ${item.quantity}</p>
+                <button class="remove-item" data-product-id="${item.id}">Remove</button>
             `;
             cartItems.appendChild(itemElement);
             total += item.price * item.quantity;
+
+            itemElement.querySelector('.remove-item').addEventListener('click', () => removeFromCart(item.id));
         });
 
         cartTotal.textContent = total.toFixed(2);
+        sessionStorage.setItem('cart', JSON.stringify(cart));
     }
 
+    function removeFromCart(productId) {
+        const index = cart.findIndex(item => item.id === productId);
+        if (index !== -1) {
+            const removedQuantity = cart[index].quantity;
+            cart.splice(index, 1);
+            updateCartDisplay();
+            updateInventoryDisplay(productId, removedQuantity);
+        }
+    }
+
+    function updateInventoryDisplay(productId, quantityChange) {
+        const productElement = document.querySelector(`.product button[data-product-id="${productId}"]`).parentNode;
+        const inventoryElement = productElement.querySelector('.inventory-count');
+        const quantityInput = productElement.querySelector('.product-quantity');
+        let currentInventory = parseInt(inventoryElement.textContent);
+        currentInventory += quantityChange;
+        inventoryElement.textContent = currentInventory;
+
+        const addButton = productElement.querySelector('.add-to-cart');
+        if (currentInventory === 0) {
+            addButton.disabled = true;
+            addButton.textContent = 'Out of Stock';
+        } else {
+            addButton.disabled = false;
+            addButton.textContent = 'Add to Cart';
+        }
+
+        quantityInput.max = currentInventory;
+        if (parseInt(quantityInput.value) > currentInventory) {
+            quantityInput.value = currentInventory;
+        }
+    }
+
+    // This part should be in a separate file that handles the order submission
+    /*
     fetch('order.php', {
         method: 'POST',
         body: formData
@@ -92,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Order placed successfully! Order ID: ' + data.orderId);
             cart = []; // Empty the cart
             updateCartDisplay();
-            localStorage.removeItem('cart'); // Clear cart from local storage
             sessionStorage.removeItem('cart'); // Clear cart from session storage
         } else {
             alert('Error placing order: ' + data.message);
@@ -101,4 +127,5 @@ document.addEventListener('DOMContentLoaded', function () {
     .catch(error => {
         console.error('Error:', error);
     });
+    */
 });

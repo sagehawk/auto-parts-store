@@ -9,7 +9,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart'])) {
 }
 
 $cartItems = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-$total = 0;
+$subtotal = 0;
+$totalWeight = 0;
+
+// Calculate subtotal and total weight
+foreach ($cartItems as $item) {
+    $product = getProductById($item['id']);
+    if (isset($item['quantity'])) {
+        $itemTotal = $product['price'] * $item['quantity'];
+        $subtotal += $itemTotal;
+        $totalWeight += $product['weight'] * $item['quantity'];
+    }
+}
+
+// Calculate shipping cost
+$shippingCost = calculateShipping($totalWeight);
+
+// Calculate total
+$total = $subtotal + $shippingCost;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,8 +46,7 @@ $total = 0;
             foreach ($cartItems as $item): 
                 $product = getProductById($item['id']);
                 if (isset($item['quantity'])) {
-                    $itemTotal = $product['price'] * $item['quantity']; // Use quantity
-                    $total += $itemTotal;
+                    $itemTotal = $product['price'] * $item['quantity'];
                     ?>
                     <div class="order-item">
                         <p><?= htmlspecialchars($product['description']) ?> x <?= $item['quantity'] ?></p>
@@ -40,11 +56,15 @@ $total = 0;
                     <p>Quantity not set for <?= htmlspecialchars($product['description']) ?></p>
                 <?php }
             endforeach; ?>
+            <p>Subtotal: $<span id="order-subtotal"><?= number_format($subtotal, 2) ?></span></p>
+            <p>Shipping: $<span id="shipping-cost"><?= number_format($shippingCost, 2) ?></span></p>
             <p>Total: $<span id="order-total"><?= number_format($total, 2) ?></span></p>
         </div>
 
         <h2>Customer Information</h2>
         <input type="hidden" name="cart_items" id="cart_items_input" value='<?= htmlspecialchars(json_encode($cartItems)) ?>'>
+        <input type="hidden" name="shipping_cost" value="<?= $shippingCost ?>">
+        <input type="hidden" name="total_cost" value="<?= $total ?>">
 
         <label for="customer_name">Customer Name:</label>
         <input type="text" id="customer_name" name="customer_name" required><br><br>

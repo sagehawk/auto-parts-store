@@ -1,46 +1,38 @@
 <?php
+require_once('../includes/admin_functions.php');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    require_once('../includes/admin_functions.php');
-    require_once('../includes/db_connect.php');
-    require_once('../includes/functions.php');
-
-    // This file would contain the HTML and PHP code for the admin interface
-    // Here's a simple example of how you might use the functions:
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (isset($_POST['set_shipping_charges'])) {
-            $weightBrackets = json_decode($_POST['weight_brackets'], true);
-            if (setShippingCharges($weightBrackets)) {
-                echo "Shipping charges updated successfully";
-            } else {
-                echo "Failed to update shipping charges";
-            }
+    if (isset($_POST['set_shipping_charges'])) {
+        $weightBrackets = [];
+        for ($i = 0; $i < count($_POST['min_weight']); $i++) {
+            $weightBrackets[] = [
+                'min' => floatval($_POST['min_weight'][$i]),
+                'max' => floatval($_POST['max_weight'][$i]),
+                'charge' => floatval($_POST['charge'][$i])
+            ];
+        }
+        if (setShippingCharges($weightBrackets)) {
+            $message = "Shipping charges updated successfully";
         }
     }
+}
 
-    //$orders = getOrders();
+$shippingRates = $_SESSION['shipping_rates'] ?? [];
 
-    if (isset($_GET['view_orders'])) {
-        $orders = viewOrders();
-        // Display orders (you'd want to format this nicely in a real application)
-        print_r($orders);
-    }
+// Order management
+$orders = viewOrders();
 
-    if (isset($_GET['search_orders'])) {
-        $criteria = [
-            'start_date' => $_GET['start_date'] ?? null,
-            'end_date' => $_GET['end_date'] ?? null,
-            'status' => $_GET['status'] ?? null,
-            'min_price' => $_GET['min_price'] ?? null,
-            'max_price' => $_GET['max_price'] ?? null
-        ];
-        $orders = searchOrders($criteria);
-        // Display search results (you'd want to format this nicely in a real application)
-        print_r($orders);
-    }
-
-    // The rest of this file would contain the HTML for the admin interface
+// Search functionality
+if (isset($_GET['search'])) {
+    $searchCriteria = [
+        'search' => $_GET['search'] ?? '',
+        'start_date' => $_GET['start_date'] ?? '',
+        'end_date' => $_GET['end_date'] ?? '',
+        'status' => $_GET['status'] ?? '',
+        'min_price' => $_GET['min_price'] ?? '',
+        'max_price' => $_GET['max_price'] ?? ''
+    ];
+    $orders = searchOrders($searchCriteria);
 }
 ?>
 
@@ -60,33 +52,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main>
         <section id="shipping-charges">
             <h2>Set Shipping Charges</h2>
+            <?php if (isset($message)): ?>
+                <p><?php echo $message; ?></p>
+            <?php endif; ?>
             <form action="admin.php" method="POST">
                 <div id="weight-brackets">
-                    <div class="weight-bracket">
-                        <input type="number" name="weight[]" placeholder="Max Weight" required>
-                        <input type="number" name="charge[]" step="0.01" placeholder="Charge" required>
-                    </div>
+                    <?php foreach ($shippingRates as $rate): ?>
+                        <div class="weight-bracket">
+                            <input type="number" step="0.01" name="min_weight[]" placeholder="Min Weight" value="<?php echo $rate['min']; ?>" required>
+                            <input type="number" step="0.01" name="max_weight[]" placeholder="Max Weight" value="<?php echo $rate['max']; ?>" required>
+                            <input type="number" step="0.01" name="charge[]" placeholder="Charge" value="<?php echo $rate['charge']; ?>" required>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (empty($shippingRates)): ?>
+                        <div class="weight-bracket">
+                            <input type="number" step="0.01" name="min_weight[]" placeholder="Min Weight" required>
+                            <input type="number" step="0.01" name="max_weight[]" placeholder="Max Weight" required>
+                            <input type="number" step="0.01" name="charge[]" placeholder="Charge" required>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <button type="button" onclick="addWeightBracket()">Add Weight Bracket</button>
                 <button type="submit" name="set_shipping_charges">Update Shipping Charges</button>
             </form>
         </section>
 
-        <script>
-        function addWeightBracket() {
-            const container = document.getElementById('weight-brackets');
-            const newBracket = document.createElement('div');
-            newBracket.className = 'weight-bracket';
-            newBracket.innerHTML = `
-                <input type="number" name="weight[]" placeholder="Max Weight" required>
-                <input type="number" name="charge[]" step="0.01" placeholder="Charge" required>
-            `;
-            container.appendChild(newBracket);
-        }
-        </script>
-
         <section id="order-management">
             <h2>Order Management</h2>
+            <form action="admin.php" method="GET">
+                <input type="text" name="search" placeholder="Search by customer name or email">
+                <input type="date" name="start_date">
+                <input type="date" name="end_date">
+                <select name="status">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="shipped">Shipped</option>
+                </select>
+                <input type="number" name="min_price" placeholder="Min Price">
+                <input type="number" name="max_price" placeholder="Max Price">
+                <button type="submit">Search</button>
+            </form>
             <table>
                 <thead>
                     <tr>
@@ -94,22 +99,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <th>Customer</th>
                         <th>Total</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($orders as $order): ?>
+                    <?php foreach ($orders as $orderId => $order): ?>
                     <tr>
-                        <td><?php echo $order['id']; ?></td>
+                        <td><?php echo $orderId; ?></td>
                         <td><?php echo $order['customer_name']; ?></td>
-                        <td>$<?php echo number_format($order['total'], 2); ?></td>
+                        <td>$<?php echo number_format($order['total_cost'], 2); ?></td>
                         <td><?php echo $order['status']; ?></td>
-                        <td><a href="view_order.php?id=<?php echo $order['id']; ?>">View</a></td>
+                        <td><?php echo $order['date']; ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </section>
     </main>
+
+    <script>
+    function addWeightBracket() {
+        const container = document.getElementById('weight-brackets');
+        const newBracket = document.createElement('div');
+        newBracket.className = 'weight-bracket';
+        newBracket.innerHTML = `
+            <input type="number" step="0.01" name="min_weight[]" placeholder="Min Weight" required>
+            <input type="number" step="0.01" name="max_weight[]" placeholder="Max Weight" required>
+            <input type="number" step="0.01" name="charge[]" placeholder="Charge" required>
+        `;
+        container.appendChild(newBracket);
+    }
+    </script>
 </body>
 </html>
