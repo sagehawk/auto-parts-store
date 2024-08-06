@@ -1,44 +1,24 @@
 <?php
-require_once('../includes/warehouse_functions.php');
-require_once('../includes/db_connect.php');
 require_once('../includes/functions.php');
-
-// This file would contain the HTML and PHP code for the warehouse interface
+require_once('../config/db_connect.php');
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_status'])) {
         $orderId = $_POST['order_id'];
         $newStatus = $_POST['new_status'];
-        if (updateOrderStatus($orderId, $newStatus)) {
+        if (isset($_SESSION['orders'][$orderId])) {
+            $_SESSION['orders'][$orderId]['status'] = $newStatus;
             echo "Order status updated successfully";
         } else {
-            echo "Failed to update order status";
-        }
-    } elseif (isset($_POST['print_packing_list'])) {
-        $orderId = $_POST['order_id'];
-        $packingList = printPackingList($orderId);
-        // Display packing list (you'd want to format this nicely in a real application)
-        print_r($packingList);
-    } elseif (isset($_POST['send_shipping_confirmation'])) {
-        $orderId = $_POST['order_id'];
-        if (sendShippingConfirmation($orderId)) {
-            echo "Shipping confirmation sent successfully";
-        } else {
-            echo "Failed to send shipping confirmation";
-        }
-    } elseif (isset($_POST['receive_inventory'])) {
-        $partNumber = $_POST['part_number'];
-        $quantity = $_POST['quantity'];
-        if (receiveInventory($partNumber, $quantity)) {
-            echo "Inventory updated successfully";
-        } else {
-            echo "Failed to update inventory";
+            echo "Order not found";
         }
     }
 }
 
-// The rest of this file would contain the HTML for the warehouse interface
-$pendingOrders = getPendingOrders(); // Implement this function in functions.php
+$pendingOrders = array_filter($_SESSION['orders'] ?? [], function($order) {
+    return $order['status'] === 'pending';
+});
 ?>
 
 <!DOCTYPE html>
@@ -61,20 +41,23 @@ $pendingOrders = getPendingOrders(); // Implement this function in functions.php
                 <thead>
                     <tr>
                         <th>Order ID</th>
-                        <th>Customer</th>
+                        <th>Customer Name</th>
+                        <th>Total</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($pendingOrders as $order): ?>
+                    <?php foreach ($pendingOrders as $orderId => $order): ?>
                     <tr>
-                        <td><?php echo $order['id']; ?></td>
+                        <td><?php echo $orderId; ?></td>
                         <td><?php echo $order['customer_name']; ?></td>
+                        <td>$<?php echo number_format($order['total_cost'], 2); ?></td>
                         <td>
-                            <a href="print_packing_list.php?id=<?php echo $order['id']; ?>">Print Packing List</a>
+                            <button class="view-order" data-order-id="<?php echo $orderId; ?>">View Order</button>
                             <form action="warehouse.php" method="POST" style="display: inline;">
-                                <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                <button type="submit" name="update_order_status">Mark as Shipped</button>
+                                <input type="hidden" name="order_id" value="<?php echo $orderId; ?>">
+                                <input type="hidden" name="new_status" value="shipped">
+                                <button type="submit" name="update_status">Mark as Shipped</button>
                             </form>
                         </td>
                     </tr>
@@ -82,74 +65,16 @@ $pendingOrders = getPendingOrders(); // Implement this function in functions.php
                 </tbody>
             </table>
         </section>
-
-        <section id="inventory-management">
-            <h2>Receive Inventory</h2>
-            <form action="warehouse.php" method="POST">
-                <label for="part_number">Part Number:</label>
-                <input type="text" id="part_number" name="part_number" required>
-                
-                <label for="quantity">Quantity:</label>
-                <input type="number" id="quantity" name="quantity" required>
-                
-                <button type="submit" name="receive_inventory">Update Inventory</button>
-            </form>
-        </section>
-
-        <section id="inventory-list">
-    <h2>Current Inventory</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Part Number</th>
-                <th>Description</th>
-                <th>Quantity</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            $inventory = getInventory(); // Implement this function
-            foreach ($inventory as $item):
-            ?>
-            <tr>
-                <td><?php echo $item['number']; ?></td>
-                <td><?php echo $item['description']; ?></td>
-                <td><?php echo $item['quantity']; ?></td>
-                <td>
-                    <button onclick="updateInventory(<?php echo $item['number']; ?>)">Update</button>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</section>
-
-    <script>
-    function updateInventory(partNumber) {
-        const newQuantity = prompt("Enter new quantity:");
-        if (newQuantity !== null) {
-            // Send AJAX request to update inventory
-            fetch('update_inventory.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `part_number=${partNumber}&quantity=${newQuantity}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Inventory updated successfully');
-                    location.reload();
-                } else {
-                    alert('Failed to update inventory');
-                }
-            });
-        }
-    }
-    </script>
-
     </main>
+
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Order Details</h2>
+            <div id="orderDetails"></div>
+        </div>
+    </div>
+
+    <script src="js/warehouse.js"></script>
 </body>
 </html>

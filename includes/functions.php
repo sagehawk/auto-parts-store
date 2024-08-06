@@ -1,27 +1,28 @@
 <?php
-
 require_once('../config/db_connect.php');
 
 function getProducts() {
     global $conn;
-
     $sql = "SELECT * FROM parts";
     $result = $conn->query($sql);
-    $products = [];
-
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $products[] = $row;
-        }
-    }
-
-    return $products;
+    return $result->fetch_all(MYSQLI_ASSOC);
 }
 
+function getCustomerByEmail($email) {
+    global $conn;
+    $stmt = $conn->prepare("SELECT * FROM customers WHERE contact = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc();
+}
+
+function getRandomCustomer() {
+    global $conn;
+    $result = $conn->query("SELECT * FROM customers ORDER BY RAND() LIMIT 1");
+    return $result->fetch_assoc();
+}
 
 function calculateShipping($weight) {
-    // Implement shipping calculation based on weight
-    // This is a placeholder implementation
     if ($weight < 5) return 5.00;
     elseif ($weight < 10) return 10.00;
     else return 15.00;
@@ -53,9 +54,10 @@ function processPayment($cardInfo, $amount) {
     if (isset($response['authorization'])) {
         return ['success' => true, 'authorization' => $response['authorization']];
     } else {
-        return ['success' => false, 'error' => $response['error'] ?? 'Unknown error'];
+        return ['success' => false, 'error' => $response['error'] ?? 'Unknown error: ' . $result];
     }
 }
+
 
 function getInventoryQuantity($partNumber) {
     global $conn;
@@ -69,39 +71,16 @@ function getInventoryQuantity($partNumber) {
     return 0;
 }
 
-function saveOrder($orderData, $cartItems, $authorizationNumber) {
-    global $conn;
-
-    // 1. Prepare SQL query for inserting into orders table
-    $stmt = $conn->prepare("INSERT INTO orders (customer_id, total_cost, shipping_address, authorization_number, status) 
-                            VALUES (?, ?, ?, ?, 'pending')"); // Initial status is pending
-
-    // 2. Bind parameters from $orderData
-    $stmt->bind_param("idss", $orderData['customer_id'], $orderData['total_cost'], $orderData['shipping_address'], $authorizationNumber);
-
-    // 3. Execute the query
-    $stmt->execute();
-    $orderId = $conn->insert_id; // Get the generated order ID
-
-    // 4. Insert into order_items table for each cart item
-    $stmt = $conn->prepare("INSERT INTO order_items (order_id, part_number, quantity) VALUES (?, ?, ?)");
-    foreach ($cartItems as $item) {
-        $stmt->bind_param("iii", $orderId, $item['id'], $item['quantity']);
-        $stmt->execute();
-    }
-
-    return $orderId;
-}
-
-
 function sendOrderConfirmationEmail($email, $orderId) {
     // Implement email sending logic
 }
 
-function getInventory() {
+function createCustomer($name, $email, $address) {
     global $conn;
-    $result = $conn->query("SELECT p.number, p.description, i.quantity FROM parts p LEFT JOIN inventory i ON p.number = i.part_number");
-    return $result->fetch_all(MYSQLI_ASSOC);
+    $stmt = $conn->prepare("INSERT INTO customers (name, contact, street) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $name, $email, $address);
+    $stmt->execute();
+    return $conn->insert_id;
 }
 
 function getProductById($id) {
@@ -116,16 +95,8 @@ function getProductById($id) {
     return null;
 }
 
-function getPendingOrders() {
-    global $conn;
-    $stmt = $conn->prepare("SELECT o.id, o.customer_name, o.status 
-                            FROM orders o 
-                            WHERE o.status = 'authorized' 
-                            ORDER BY o.order_date ASC");
-    $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->fetch_all(MYSQLI_ASSOC);
-}
+
+
 
 
 ?>

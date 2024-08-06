@@ -1,9 +1,8 @@
 <?php
 require_once('../includes/functions.php');
 require_once('../config/db_connect.php');
-require_once('../includes/order_processing.php');
+session_start();
 
-// This prevents undefined index errors
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $orderData = $_POST;
     $cartItems = json_decode($_POST['cart_items'], true);
@@ -12,7 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $totalWeight = 0;
     $totalPrice = 0;
     foreach ($cartItems as $item) {
-        $product = getProductById($item['id']);
+        $stmt = $conn->prepare("SELECT price, weight FROM parts WHERE number = ?");
+        $stmt->bind_param("i", $item['id']);
+        $stmt->execute();
+        $product = $stmt->get_result()->fetch_assoc();
+        
         $totalWeight += $product['weight'] * $item['quantity'];
         $totalPrice += $product['price'] * $item['quantity'];
     }
@@ -29,11 +32,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ], $totalPrice);
     
     if ($paymentResult['success']) {
-        // Save order to database
-        $orderId = saveOrder($orderData, $cartItems, $paymentResult['authorization']);
+        // Get an existing customer or use a random one
+        $customer = getCustomerByEmail($orderData['email']);
+        if (!$customer) {
+            $customer = getRandomCustomer();
+        }
         
-        // Send confirmation email
-        sendOrderConfirmationEmail($orderData['email'], $orderId);
+        // Store order in session
+        $orderId = uniqid();
+        $_SESSION['orders'][$orderId] = [
+            'customer_id' => $customer['id'],
+            'customer_name' => $customer['name'],
+            'customer_email' => $customer['contact'],
+            'shipping_address' => $orderData['shipping_address'], // Store the provided shipping address
+            'total_cost' => $totalPrice,
+            'items' => $cartItems,
+            'status' => 'pending',
+            'date' => date('Y-m-d H:i:s')
+        ];
         
         echo json_encode(['success' => true, 'orderId' => $orderId]);
     } else {

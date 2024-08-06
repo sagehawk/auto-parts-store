@@ -81,4 +81,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         cartTotal.textContent = total.toFixed(2);
     }
+
+    fetch('order.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Order placed successfully! Order ID: ' + data.orderId);
+            cart = []; // Empty the cart
+            updateCartDisplay();
+            localStorage.removeItem('cart'); // Clear cart from local storage
+            sessionStorage.removeItem('cart'); // Clear cart from session storage
+        } else {
+            alert('Error placing order: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 });
