@@ -23,7 +23,20 @@ document.addEventListener('DOMContentLoaded', function () {
     checkoutButton.addEventListener('click', () => {
         // Store cart in session storage before redirecting
         sessionStorage.setItem('cart', JSON.stringify(cart));
-        window.location.href = 'checkout.php';
+
+        // Use fetch to send cart data to checkout.php before redirecting
+        fetch('checkout.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `cart=${encodeURIComponent(JSON.stringify(cart))}`
+        }).then(response => response.text())
+          .then(() => {
+              window.location.href = 'checkout.php';
+          }).catch(error => {
+              console.error('Fetch error:', error);
+          });
     });
 
     function addToCart(productId) {
@@ -36,13 +49,19 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(product => {
                 console.log('Product added:', product); // Log product for debugging
-                cart.push(product);
+                const existingItem = cart.find(item => item.id === product.id);
+                if (existingItem) {
+                    existingItem.quantity += 1; // Increment quantity if item already in cart
+                } else {
+                    product.quantity = 1; // Add quantity field
+                    cart.push(product);
+                }
                 updateCartDisplay();
             })
             .catch(error => {
                 console.error('Fetch error:', error);
             });
-    }
+    }    
 
     function updateCartDisplay() {
         cartItems.innerHTML = '';
@@ -54,10 +73,10 @@ document.addEventListener('DOMContentLoaded', function () {
             itemElement.innerHTML = `
                 <p>${item.description}</p>
                 <p>Price: $${item.price}</p>
-                <p>Quantity: 1</p>
+                <p>Quantity: ${item.quantity}</p>
             `;
             cartItems.appendChild(itemElement);
-            total += parseFloat(item.price);
+            total += item.price * item.quantity;
         });
 
         cartTotal.textContent = total.toFixed(2);

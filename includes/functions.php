@@ -71,9 +71,28 @@ function getInventoryQuantity($partNumber) {
 
 function saveOrder($orderData, $cartItems, $authorizationNumber) {
     global $conn;
-    // Implement order saving logic
-    // Return the order ID
+
+    // 1. Prepare SQL query for inserting into orders table
+    $stmt = $conn->prepare("INSERT INTO orders (customer_id, total_cost, shipping_address, authorization_number, status) 
+                            VALUES (?, ?, ?, ?, 'pending')"); // Initial status is pending
+
+    // 2. Bind parameters from $orderData
+    $stmt->bind_param("idss", $orderData['customer_id'], $orderData['total_cost'], $orderData['shipping_address'], $authorizationNumber);
+
+    // 3. Execute the query
+    $stmt->execute();
+    $orderId = $conn->insert_id; // Get the generated order ID
+
+    // 4. Insert into order_items table for each cart item
+    $stmt = $conn->prepare("INSERT INTO order_items (order_id, part_number, quantity) VALUES (?, ?, ?)");
+    foreach ($cartItems as $item) {
+        $stmt->bind_param("iii", $orderId, $item['id'], $item['quantity']);
+        $stmt->execute();
+    }
+
+    return $orderId;
 }
+
 
 function sendOrderConfirmationEmail($email, $orderId) {
     // Implement email sending logic
@@ -107,5 +126,6 @@ function getPendingOrders() {
     $result = $stmt->get_result();
     return $result->fetch_all(MYSQLI_ASSOC);
 }
+
 
 ?>

@@ -4,7 +4,6 @@ require_once('../includes/db_connect.php');
 require_once('../includes/functions.php');
 
 // This file would contain the HTML and PHP code for the warehouse interface
-// Here's a simple example of how you might use the functions:
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_status'])) {

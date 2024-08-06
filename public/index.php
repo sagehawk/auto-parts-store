@@ -52,11 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php
             // Fetch products from the database
             $products = getProducts();
+
             foreach ($products as $product) {
                 echo "<div class='product'>";
                 echo "<h3>{$product['description']}</h3>";
                 echo "<img src='{$product['pictureURL']}' alt='{$product['description']}'>";
                 echo "<p>Price: $" . number_format($product['price'], 2) . "</p>";
+                echo "<input type='number' class='product-quantity' min='1' value='1' data-product-id='" . $product['number'] . "'>";
                 echo "<p>Weight: {$product['weight']} lbs</p>";
                 echo "<button class='add-to-cart' data-product-id='{$product['number']}'>Add to Cart</button>";
                 echo "</div>";

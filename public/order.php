@@ -5,8 +5,6 @@ require_once('../includes/order_processing.php');
 
 // This prevents undefined index errors
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once('../includes/functions.php');
-    require_once('../config/db_connect.php'); 
     $orderData = $_POST;
     $cartItems = json_decode($_POST['cart_items'], true);
     
