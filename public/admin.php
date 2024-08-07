@@ -100,6 +100,7 @@ if (isset($_GET['search'])) {
                         <th>Total</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th>Order Details</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -110,6 +111,9 @@ if (isset($_GET['search'])) {
                         <td>$<?php echo number_format($order['total_cost'], 2); ?></td>
                         <td><?php echo $order['status']; ?></td>
                         <td><?php echo $order['date']; ?></td>
+                        <td>
+                            <button class="view-order" data-order-id="<?php echo $orderId; ?>">View Order</button>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -130,5 +134,13 @@ if (isset($_GET['search'])) {
         container.appendChild(newBracket);
     }
     </script>
+    <div id="orderModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Order Details</h2>
+        <div id="orderDetails"></div>
+    </div>
+</div>
 </body>
+<script src="js/warehouse.js"></script>
 </html>
