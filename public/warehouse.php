@@ -1,7 +1,34 @@
 <?php
 require_once('../includes/functions.php');
-require_once('../config/db_connect.php');
 session_start();
+require_once('../config/db_connect.php');
+
+// Initialize inventory with default quantity of 10 for each item if not already set
+if (!isset($_SESSION['inventory'])) {
+    $_SESSION['inventory'] = [];
+
+    // Fetch product information from the database
+    $stmt = $conn->prepare("SELECT number, description FROM parts");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($row = $result->fetch_assoc()) {
+        $_SESSION['inventory'][$row['number']] = [
+            'description' => $row['description'],
+            'quantity' => 10
+        ];
+    }
+}
+
+// Function to get the current inventory
+function getInventory() {
+    return $_SESSION['inventory'];
+}
+
+// Function to get the quantity of a specific part
+function getInventoryQuantity($partNumber) {
+    return $_SESSION['inventory'][$partNumber]['quantity'];
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_status'])) {

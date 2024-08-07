@@ -59,10 +59,18 @@ function sendShippingConfirmation($orderId) {
 }
 
 function receiveInventory($partNumber, $quantity) {
-    global $conn;
-    $stmt = $conn->prepare("UPDATE inventory SET quantity = quantity + ? WHERE part_number = ?");
-    $stmt->bind_param("ii", $quantity, $partNumber);
-    $stmt->execute();
-    return $stmt->affected_rows > 0;
+    // Check if the part exists in the session inventory
+    if (isset($_SESSION['inventory'][$partNumber])) {
+        // Update the quantity
+        $_SESSION['inventory'][$partNumber]['quantity'] += $quantity;
+    } else {
+        // If the part does not exist, initialize it with the quantity + 10
+        $_SESSION['inventory'][$partNumber] = [
+            'description' => 'New Part', // Default description, replace as needed
+            'quantity' => 10 + $quantity
+        ];
+    }
+    return true;
 }
+
 ?>
