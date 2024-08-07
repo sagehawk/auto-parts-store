@@ -163,5 +163,33 @@ function createCustomer($name, $city, $street) {
     return $conn->insert_id;
 }
 
+function updateInventoryAfterOrder($cartItems) {
+    foreach ($cartItems as $item) {
+        // Check if the item exists in the session inventory
+        if (!isset($_SESSION['inventory'][$item['id']])) {
+            // If not, initialize it
+            $_SESSION['inventory'][$item['id']] = getInitialQuantityFromDatabase($item['id']);
+        }
+        
+        // Update the session inventory
+        $_SESSION['inventory'][$item['id']] -= $item['quantity'];
+        
+        // Ensure quantity doesn't go below zero
+        $_SESSION['inventory'][$item['id']] = max(0, $_SESSION['inventory'][$item['id']]);
+    }
+}
+
+// Helper function to get the initial quantity from the database
+function getInitialQuantityFromDatabase($part_number) {
+    global $conn;
+    $stmt = $conn->prepare("SELECT quantity FROM inventory WHERE part_number = ?");
+    $stmt->bind_param("i", $part_number);
+    $stmt->execute();
+    $stmt->bind_result($quantity);
+    $stmt->fetch();
+    $stmt->close();
+    return $quantity;
+}
+
 
 ?>

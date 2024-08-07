@@ -80,7 +80,7 @@ if (isset($_GET['search'])) {
         <section id="order-management">
             <h2>Order Management</h2>
             <form action="admin.php" method="GET">
-                <input type="text" name="search" placeholder="Search by customer name or email">
+                <input type="text" name="search" placeholder="Search by customer name">
                 <input type="date" name="start_date">
                 <input type="date" name="end_date">
                 <select name="status">

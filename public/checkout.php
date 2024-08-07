@@ -86,6 +86,8 @@ $total = $subtotal + $shippingCost;
         <button type="submit">Place Order</button>
     </form>
 
+    <div id="modal" class="modal"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const storedCart = sessionStorage.getItem('cart');
@@ -102,19 +104,49 @@ $total = $subtotal + $shippingCost;
             }
         });
 
+        function showModal(message) {
+            const modal = document.getElementById('modal');
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <div class="error-icon">!</div>
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                    <button class="btn-secondary" onclick="closeModal(this)">Close</button>
+                </div>
+            `;
+
+            const closeBtn = modal.querySelector('.close');
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    document.body.removeChild(modal);
+                }
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function closeModal(element) {
+            const modal = element.closest('.modal');
+            document.body.removeChild(modal);
+        }
+
         function validateForm() {
             const customerName = document.getElementById('customer_name').value;
             const email = document.getElementById('email').value;
             const shippingAddress = document.getElementById('shipping_address').value;
 
             if (customerName === "" || email === "" || shippingAddress === "") {
-                alert("Please fill in all fields.");
+                showModal("Please fill in all fields.");
                 return false;
             }
 
             return true; 
         }
     </script>
-        <script src="main.js"></script>
 </body>
 </html>

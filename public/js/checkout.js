@@ -14,7 +14,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        throw new Error('Received non-JSON response: ' + text);
+                    });
+                }
+            })
             .then(data => {
                 if (data.success) {
                     showOrderConfirmation(data.orderId);
@@ -26,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                showErrorModal('An unexpected error occurred. Please try again.');
+                showErrorModal('An unexpected error occurred. Please try again. Error details: ' + error.message);
             });
         });
     }
