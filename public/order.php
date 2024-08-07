@@ -32,15 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($customer) {
             // Create order in session
             $orderId = createOrder($customer, $totalPrice, $shippingCost, $cartItems);
-            echo json_encode(['success' => true, 'orderId' => $orderId]);
+            $response = ['success' => true, 'orderId' => $orderId];
         } else {
-            echo json_encode(['success' => false, 'message' => 'Customer not found in the database']);
+            $response = ['success' => false, 'message' => 'Customer not found in the database'];
         }
     } else {
-        echo json_encode(['success' => false, 'message' => $paymentResult['error']]);
+        $response = ['success' => false, 'message' => $paymentResult['error']];
     }
 } else {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    $response = ['success' => false, 'message' => 'Method not allowed'];
 }
+
+// Send JSON response
+header('Content-Type: application/json');
+echo json_encode($response);
+exit;
 ?>

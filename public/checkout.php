@@ -34,12 +34,13 @@ $total = $subtotal + $shippingCost;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout</title>   
-    <link rel="stylesheet" href="css/styles.css">   
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/checkout.js" defer></script>
 </head>
 <body>
     <h1>Checkout</h1>
 
-    <form id="checkout-form" action="order.php" method="POST" onsubmit="return validateForm()">
+    <form id="checkout-form" action="order.php" method="POST">
         <h2>Order Summary</h2>
         <div id="order-summary">
             <?php 
