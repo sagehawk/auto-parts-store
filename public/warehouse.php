@@ -20,15 +20,8 @@ if (!isset($_SESSION['inventory'])) {
     }
 }
 
-// Function to get the current inventory
-function getInventory() {
-    return $_SESSION['inventory'];
-}
 
-// Function to get the quantity of a specific part
-function getInventoryQuantity($partNumber) {
-    return $_SESSION['inventory'][$partNumber]['quantity'];
-}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_status'])) {
