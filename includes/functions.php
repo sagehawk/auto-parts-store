@@ -150,7 +150,7 @@ function createOrder($customerDetails, $totalCost, $shippingCost, $items) {
         'shipping_cost' => $shippingCost,
         'items' => $items,
         'status' => 'pending',
-        'date' => date('Y-m-d H:i:s')
+        'date' => date('Y-m-d h:i:A', strtotime('7 hours ago'))
     ];
     return $orderId;
 }
