@@ -1,6 +1,6 @@
 <?php
 require_once('../config/db_connect.php');
-require_once('../includes/functions.php'); // Assuming you have your getProductById() function here
+require_once('../includes/functions.php');
 
 if (isset($_GET['id'])) {
     $productId = (int) $_GET['id']; // Cast to integer for security
@@ -9,13 +9,12 @@ if (isset($_GET['id'])) {
     $product = getProductById($productId);
 
     if ($product) {
-        // Ensure the product is in a format JavaScript can understand
         $productData = [
             'id'          => $product['number'],
             'description' => $product['description'],
             'price'       => number_format($product['price'], 2), // Format as string for display
             'weight'      => $product['weight'],
-            'pictureURL'  => $product['pictureURL'] // Assuming you have an image URL field
+            'pictureURL'  => $product['pictureURL']
         ];
 
         // Send the product data as JSON

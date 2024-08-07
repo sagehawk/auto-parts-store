@@ -24,8 +24,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     checkoutButton.addEventListener('click', () => {
         sessionStorage.setItem('cart', JSON.stringify(cart));
-        window.location.href = 'checkout.php';
+        saveCartToSessionAndRedirect();
     });
+
+    function saveCartToSessionAndRedirect() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'checkout.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                window.location.href = 'checkout.php';
+            }
+        };
+        xhr.send('cart=' + encodeURIComponent(JSON.stringify(cart)));
+    }
 
     function addToCart(productId, quantity) {
         fetch(`get_product.php?id=${productId}`)
@@ -49,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => {
                 console.error('Fetch error:', error);
             });
-    }    
+    }
 
     function updateCartDisplay() {
         cartItems.innerHTML = '';
@@ -106,78 +118,4 @@ document.addEventListener('DOMContentLoaded', function () {
             quantityInput.value = currentInventory;
         }
     }
-
-    document.getElementById('checkout-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        
-        fetch('order.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showModal('Order Placed Successfully', `Your order has been placed. Order ID: ${data.orderId}`);
-                // Clear the cart
-                sessionStorage.removeItem('cart');
-            } else {
-                showModal('Error', `Failed to place order: ${data.message}`);
-            }
-        })
-        .catch(error => {
-            showModal('Error', 'An unexpected error occurred. Please try again.');
-            console.error('Error:', error);
-        });
-    });
-    
-    function showModal(title, message) {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>${title}</h2>
-                <p>${message}</p>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    
-        const closeBtn = modal.querySelector('.close');
-        closeBtn.onclick = function() {
-            document.body.removeChild(modal);
-        }
-    
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                document.body.removeChild(modal);
-            }
-        }
-    
-        modal.style.display = 'block';
-    }
-    
-    // This part should be in a separate file that handles the order submission
-    /*
-    fetch('order.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Order placed successfully! Order ID: ' + data.orderId);
-            cart = []; // Empty the cart
-            updateCartDisplay();
-            sessionStorage.removeItem('cart'); // Clear cart from session storage
-        } else {
-            alert('Error placing order: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-    */
 });
-

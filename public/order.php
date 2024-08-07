@@ -24,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'number' => $orderData['card-number'],
         'name' => $orderData['card-name'],
         'expiry' => $orderData['card-expiry'],
-        'cvv' => $orderData['card-cvv']
     ], $totalPrice);
     
     if ($paymentResult['success']) {

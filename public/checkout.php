@@ -82,9 +82,6 @@ $total = $subtotal + $shippingCost;
         <label for="card-expiry">Expiry Date:</label>
         <input type="text" id="card-expiry" name="card-expiry" required><br><br>
 
-        <label for="card-cvv">CVV:</label>
-        <input type="text" id="card-cvv" name="card-cvv" required><br><br>
-
         <button type="submit">Place Order</button>
     </form>
 

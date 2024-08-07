@@ -2,7 +2,6 @@
 require_once('../config/db_connect.php');
 require_once('../includes/admin_functions.php');
 require_once('../includes/credit_card_processing.php');
-require_once('../includes/inventory_management.php');
 require_once('../includes/order_processing.php');
 require_once('../includes/warehouse_functions.php');
 require_once('../includes/functions.php');
@@ -23,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'number' => $_POST['card_number'],
         'expiration' => $_POST['card_expiry'],
         'name' => $_POST['card_name'],
-        'cvv' => $_POST['card_cvv'] // Include CVV if needed
     );
     
     $result = placeOrder($_POST['customer_id'], $items, $_POST['shipping_address'], $creditCardInfo);
@@ -31,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Return the result as JSON
     header('Content-Type: application/json');
     echo json_encode($result);
-    exit;  // Make sure to exit after sending JSON response
+    exit;
 }
 
 $products = getProducts();

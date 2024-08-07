@@ -3,7 +3,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require_once('../config/db_connect.php');
-require_once('../includes/inventory_management.php');
 require_once('../includes/credit_card_processing.php');
 
 function placeOrder($customerId, $items, $shippingAddress, $creditCardInfo) {

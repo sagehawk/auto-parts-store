@@ -7,7 +7,6 @@ function getProducts() {
     $result = $conn->query($sql);
     $products = $result->fetch_all(MYSQLI_ASSOC);
     
-    // Add inventory quantity to each product
     foreach ($products as &$product) {
         $product['inventory'] = getInventoryQuantity($product['number']);
     }
@@ -82,7 +81,7 @@ function processPayment($cardInfo, $amount) {
 
 
 function sendOrderConfirmationEmail($email, $orderId) {
-    // Implement email sending logic
+    // Implement email sending logic (No longer needed)
 }
 
 function getProductById($id) {
